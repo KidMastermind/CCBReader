@@ -192,11 +192,19 @@
         case kCCBFloatInteger:
             return [self readIntWithSign:YES];
         default: {
-            // using a memcpy since the compiler isn't
-            // doing the float ptr math correctly on device.
+            // Copy the float byte by byte
+            // memcpy dosn't work on latest Xcode (4.6)
             float * pF = (float*)(bytes+currentByte);
             float f = 0;
-            memcpy(&f, pF, sizeof(float));
+            
+            unsigned char* src = (unsigned char*) pF;
+            unsigned char* dst = (unsigned char*) &f;
+            
+            for (int i = 0; i < 4; i++)
+            {
+                dst[i] = src[i];
+            }
+            
             currentByte+=4;
             return f;
         }
@@ -1035,15 +1043,15 @@
 
 + (void) callDidLoadFromCCBForNodeGraph:(CCNode*)nodeGraph
 {
-    if ([nodeGraph respondsToSelector:@selector(didLoadFromCCB)])
-    {
-        [nodeGraph performSelector:@selector(didLoadFromCCB)];
-    }
-    
     CCNode* child = NULL;
     CCARRAY_FOREACH(nodeGraph.children, child)
     {
         [CCBReader callDidLoadFromCCBForNodeGraph:child];
+    }
+    
+    if ([nodeGraph respondsToSelector:@selector(didLoadFromCCB)])
+    {
+        [nodeGraph performSelector:@selector(didLoadFromCCB)];
     }
 }
 
@@ -1194,7 +1202,7 @@
     }
     
     // Use default lookup
-    return [bundle_ pathForResource:resource ofType:ext inDirectory:subpath];
+    return [_bundle pathForResource:resource ofType:ext inDirectory:subpath];
 }
 
 @end

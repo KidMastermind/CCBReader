@@ -29,6 +29,8 @@
 #import "CCBKeyframe.h"
 #import "CCNode+CCBRelativePositioning.h"
 
+static NSInteger ccbAnimationManagerID = 0;
+
 @implementation CCBAnimationManager
 
 @synthesize sequences;
@@ -41,6 +43,9 @@
 {
     self = [super init];
     if (!self) return NULL;
+    
+    animationManagerId = ccbAnimationManagerID;
+    ccbAnimationManagerID++;
     
     sequences = [[NSMutableArray alloc] init];
     nodeSequences = [[NSMutableDictionary alloc] init];
@@ -346,6 +351,16 @@
     }
 }
 
+- (void) removeActionsByTag:(NSInteger)tag fromNode:(CCNode*)node
+{
+    CCActionManager* am = [[CCDirector sharedDirector] actionManager];
+    
+    while ([am getActionByTag:tag target:node])
+    {
+        [am removeActionByTag:tag target:node];
+    }
+}
+
 - (void) runActionsForNode:(CCNode*)node sequenceProperty:(CCBSequenceProperty*)seqProp tweenDuration:(float)tweenDuration
 {
     NSArray* keyframes = [seqProp keyframes];
@@ -380,6 +395,7 @@
         }
         
         CCSequence* seq = [CCSequence actionWithArray:actions];
+        seq.tag = animationManagerId;
         [node runAction:seq];
     }
 }
@@ -388,12 +404,14 @@
 {
     NSAssert(seqId != -1, @"Sequence id %d couldn't be found",seqId);
     
-    [rootNode stopAllActions];
+    // Stop actions associated with this animation manager
+    [self removeActionsByTag:animationManagerId fromNode:rootNode];
     
     for (NSValue* nodePtr in nodeSequences)
     {
         CCNode* node = [nodePtr pointerValue];
-        [node stopAllActions];
+        // Stop actions associated with this animation manager
+        [self removeActionsByTag:animationManagerId fromNode:node];
         
         NSDictionary* seqs = [nodeSequences objectForKey:nodePtr];
         NSDictionary* seqNodeProps = [seqs objectForKey:[NSNumber numberWithInt:seqId]];
@@ -429,6 +447,7 @@
     // Make callback at end of sequence
     CCBSequence* seq = [self sequenceFromSequenceId:seqId];
     CCAction* completeAction = [CCSequence actionOne:[CCDelayTime actionWithDuration:seq.duration+tweenDuration] two:[CCCallFunc actionWithTarget:self selector:@selector(sequenceCompleted)]];
+    completeAction.tag = animationManagerId;
     [rootNode runAction:completeAction];
     
     // Set the running scene
@@ -524,7 +543,7 @@
 
 -(void) update:(ccTime)time
 {
-	((CCSprite *)target_).displayFrame = spriteFrame;
+	((CCSprite *)_target).displayFrame = spriteFrame;
 }
 
 @end
@@ -556,13 +575,13 @@
 -(void) startWithTarget:(CCNode *)aTarget
 {
 	[super startWithTarget:aTarget];
-    startAngle_ = [target_ rotation];
+    startAngle_ = [_target rotation];
     diffAngle_ = dstAngle_ - startAngle_;
 }
 
 -(void) update: (ccTime) t
 {
-	[target_ setRotation: startAngle_ + diffAngle_ * t];
+	[_target setRotation: startAngle_ + diffAngle_ * t];
 }
 
 @end
@@ -573,11 +592,11 @@
 {
     if (t < 0)
     {
-        [other update:0];
+        [_inner update:0];
     }
     else
     {
-        [other update:1];
+        [_inner update:1];
     }
 }
 @end

@@ -44,6 +44,8 @@
     NSMutableDictionary* baseValues;
     int autoPlaySequenceId;
     
+    NSInteger animationManagerId;
+    
     CCNode* rootNode;
     CGSize rootContainerSize;
     
@@ -54,7 +56,7 @@
 @property (nonatomic,assign) int autoPlaySequenceId;
 @property (nonatomic,assign) CCNode* rootNode;
 @property (nonatomic,assign) CGSize rootContainerSize;
-@property (nonatomic,retain) NSObject<CCBAnimationManagerDelegate>* delegate;
+@property (nonatomic,assign) NSObject<CCBAnimationManagerDelegate>* delegate;
 @property (nonatomic,readonly) NSString* runningSequenceName;
 
 - (CGSize) containerSize:(CCNode*)node;
