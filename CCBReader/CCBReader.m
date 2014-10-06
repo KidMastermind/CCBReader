@@ -584,10 +584,12 @@
         
         if (setProp)
         {
+            /*
             if ([[fnt lowercaseString] hasSuffix:@".ttf"])
             {
                 fnt = [[fnt lastPathComponent] stringByDeletingPathExtension];
             }
+             */
             [node setValue:fnt forKey:name];
         }
     }
